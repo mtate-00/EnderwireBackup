@@ -1,0 +1,286 @@
+[include mainsail.cfg]
+[include stealthburner_leds.cfg]
+[include macros.cfg]
+
+[mcu]
+serial: /dev/serial/by-id/usb-Klipper_lpc1768_17F0010BA498C8953DC73461C22000F5-if00
+restart_method: command
+
+[printer]
+kinematics: corexz
+max_velocity: 500
+max_accel: 5000
+max_z_velocity: 100
+max_z_accel: 2200
+square_corner_velocity: 4.0
+
+[exclude_object]
+
+
+#####################################################################
+#   X/Y/Z Stepper Settings
+#####################################################################
+
+[stepper_x]
+step_pin: P2.2
+dir_pin: P2.6
+enable_pin: !P2.1
+microsteps: 32
+rotation_distance: 40
+full_steps_per_rotation: 200
+endstop_pin: ^EBBCan:gpio6
+position_endstop: 216
+position_max: 216
+homing_speed: 50
+
+[tmc2209 stepper_x]
+uart_pin: P1.10
+run_current: 0.75
+interpolate: False
+stealthchop_threshold: 0
+
+[stepper_y]
+step_pin: P0.19
+dir_pin: P0.20
+enable_pin: !P2.8
+microsteps: 32
+rotation_distance: 40
+full_steps_per_rotation: 200
+endstop_pin: ^P1.28
+position_endstop: 0
+position_max: 230
+homing_speed: 50
+
+[tmc2209 stepper_y]
+uart_pin: P1.9
+run_current: 0.65
+interpolate: False
+stealthchop_threshold: 0
+
+[stepper_z]
+step_pin: P0.22
+dir_pin: P2.11
+enable_pin: !P0.21
+microsteps: 32
+rotation_distance: 40
+full_steps_per_rotation: 200
+endstop_pin: probe:z_virtual_endstop # uses cartographer as virtual endstop
+homing_retract_dist: 0 # cartographer needs this to be set to 0
+position_max: 185
+
+[tmc2209 stepper_z]
+uart_pin: P1.8
+run_current: 0.65
+interpolate: False
+stealthchop_threshold: 0
+
+#[bed_screws]
+#screw1: 0, 25
+#screw2: 210, 25
+#screw3: 210, 220
+#screw4: 0, 220
+
+[screws_tilt_adjust]
+screw1: 23, 0
+screw1_name: front left screw
+screw2: 195, 0
+screw2_name: front right screw
+screw3: 195, 168
+screw3_name: rear right screw
+screw4: 23, 168
+screw4_name: rear left screw
+horizontal_move_z: 10.
+speed: 300.
+screw_thread: CW-M3
+
+
+#####################################################################
+#   Extruder
+#####################################################################
+#toolhead sb2209 mcu: canbus: 618969fe0b00
+
+[mcu EBBCan]
+canbus_uuid: 618969fe0b00
+
+[temperature_sensor EBB_NTC]
+sensor_type: Generic 3950
+sensor_pin: EBBCan:gpio28
+
+#[adxl345]
+#cs_pin: EBBCan:gpio1
+#spi_software_sclk_pin: EBBCan:gpio2
+#spi_software_mosi_pin: EBBCan:gpio0
+#spi_software_miso_pin: EBBCan:gpio3
+#axes_map: z,-y,x
+
+#[resonance_tester]
+#probe_points: 110, 110, 20
+#accel_chip: adxl345
+
+[extruder]
+step_pin: EBBCan:gpio18
+dir_pin: EBBCan:gpio19
+enable_pin: !EBBCan:gpio17
+rotation_distance: 22.971960
+gear_ratio: 50:10
+microsteps: 32
+full_steps_per_rotation: 200
+nozzle_diameter: 0.400
+filament_diameter: 1.750
+heater_pin: EBBCan:gpio7
+sensor_type: ATC Semitec 104GT-2
+sensor_pin: EBBCan:gpio27
+#control: pid
+#pid_Kp: 22.2
+#pid_Ki: 1.08
+#pid_Kd: 114
+min_temp: 0
+max_temp: 300
+pressure_advance: 0.039
+
+[tmc2209 extruder]
+uart_pin: EBBCan:gpio20
+run_current: 0.650
+stealthchop_threshold: 999999
+
+
+#####################################################################
+#   Bed Heater
+#####################################################################
+
+[heater_bed]
+heater_pin: P2.5
+sensor_type: EPCOS 100K B57560G104F
+sensor_pin: P0.23
+#control: pid
+min_temp: 0
+max_temp: 130
+#pid_kp = 37.480
+#pid_ki = 1.322
+#pid_kd = 265.639
+
+
+#####################################################################
+#   Probe
+#####################################################################
+
+[scanner]
+canbus_uuid: e8eac3069125            
+x_offset: 0                          
+y_offset: 25                         
+backlash_comp: 0.09268 #0.09855
+#   Backlash compensation distance for removing Z backlash before measuring
+#calibration_method: touch
+sensor: cartographer
+sensor_alt: carto    
+mesh_runs: 2
+
+[bed_mesh]
+zero_reference_position: 23, 25 #110, 110    
+speed: 120
+horizontal_move_z: 5
+mesh_min: 30, 30
+#    start point of bed mesh [X, Y]
+mesh_max: 190, 190
+#    end point of bed mesh [X, Y]
+probe_count: 30, 30
+algorithm: bicubic
+
+[safe_z_home]
+home_xy_position: 23, 25 #110, 110
+# Example home_xy_position: 175,175 - This would be for a 350 * 350mm bed. 
+z_hop: 10
+
+[temperature_sensor Cartographer_MCU]
+sensor_type:   temperature_mcu
+sensor_mcu:            scanner
+min_temp:                    0
+max_temp:                  105
+
+[lis2dw]
+cs_pin: scanner:PA3
+spi_bus: spi1
+
+[resonance_tester]
+accel_chip: lis2dw
+probe_points:
+    110, 110, 20
+
+[input_shaper]
+shaper_type_x: mzv
+shaper_freq_x: 116.2
+shaper_type_y: mzv
+shaper_freq_y: 75.7
+
+
+
+#####################################################################
+#   Fan Control
+#####################################################################
+
+[heater_fan hotend_fan]
+pin: EBBCan:gpio14
+heater: extruder
+heater_temp: 50.0
+shutdown_speed: 1.0
+
+[fan] #4 wire pwm fan used for part cooling
+pin: EBBCan:gpio15
+tachometer_pin: ^EBBCan:gpio12
+#tachometer_ppr: 1
+
+[controller_fan mcu_fan] #4020 fan at rear of printer
+pin: P1.14
+shutdown_speed: 1.0
+fan_speed: 0.7
+heater: heater_bed
+stepper: stepper_x, stepper_y, stepper_z
+
+[controller_fan pi_fan] #4010 fan at front of printer
+pin: P1.15
+shutdown_speed: 1.0
+fan_speed: 0.4
+heater: heater_bed
+stepper: stepper_x, stepper_y, stepper_z
+
+#[fan_generic spare] #last port on spare driver
+#pin: P1.16
+
+#*# <---------------------- SAVE_CONFIG ---------------------->
+#*# DO NOT EDIT THIS BLOCK OR BELOW. The contents are auto-generated.
+#*#
+#*# [scanner model default]
+#*# model_coef = 1.5086332589422098,
+#*# 	1.7475637158437334,
+#*# 	0.7505744528093404,
+#*# 	-0.5314518601017292,
+#*# 	0.17275141307126674,
+#*# 	4.078159749116335,
+#*# 	0.26814265080922123,
+#*# 	-5.953896918136012,
+#*# 	-0.05628011423199296,
+#*# 	3.1097998267654052
+#*# model_domain = 3.1430562493632665e-07,3.3333333333333335e-07
+#*# model_range = 0.200000,5.100000
+#*# model_temp = 32.357294
+#*# model_offset = 0.00000
+#*# model_mode = touch
+#*# model_fw_version = CARTOGRAPHER 5.1.0
+#*#
+#*# [extruder]
+#*# control = pid
+#*# pid_kp = 34.274
+#*# pid_ki = 6.013
+#*# pid_kd = 48.838
+#*#
+#*# [scanner]
+#*# scanner_touch_threshold = 3000
+#*# scanner_touch_z_offset = 0.130
+#*# scanner_touch_speed = 3
+#*# mode = touch
+#*#
+#*# [heater_bed]
+#*# control = pid
+#*# pid_kp = 74.376
+#*# pid_ki = 1.675
+#*# pid_kd = 825.569
